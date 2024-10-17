@@ -93,29 +93,35 @@
     var revealedCount;
     var show_grid = [];
 
+    // check if input row, col and bomb numbers is valid
     function checkValid() {
         row = parseInt(document.getElementById("row").value);
         col = parseInt(document.getElementById("col").value);
         bomb_num = parseInt(document.getElementById("bomb").value);
-        totalCells = row * col;
-        if (row > 0 && col > 0 && bomb_num >= totalCells) {
-            alert("invalid number of bombs.");
+        console.log("row: " + row + " col: " + col + "bomb numb: " + bomb_num);
+        
+        // ensure inputs are positive integers
+        if (!/^[1-9]\d*$/.test(row) || !/^[1-9]\d*$/.test(col) 
+            || !/^[1-9]\d*$/.test(bomb_num) || bomb_num >= row * col) {
+            alert("invalid input");
             return false;
         }
+        totalCells = row * col;
         bomb_left = bomb_num;
         revealedCount = 0;
         return true;
 
     }
-    // track grids
-    function trackgrids() {
+
+    // track grid to console, don't output anything
+    function trackgrid() {
         console.log("show grid");
         for (var i = 0; i < row; i++) {
             console.log(show_grid[i]);
         }
     }
 
-
+    // randomSelect(n: int, low: int, high: int)
     // randomly select n integers in range of low to high and return array of non-repeating integers
     function randomSelect(n, low, high) {
         unique_numbers = new Set();
@@ -124,11 +130,12 @@
             // avoid repeated integers
             unique_numbers.add(randInt);
         }
-        // return in array type
+        // return in array data type
         return Array.from(unique_numbers);
     }
 
-    // return if an index is a bomb
+    // isBomb(i: int, j: int)
+    // check if an index [i][j] is a bomb
     function isBomb(i, j) {
         return show_grid[i][j] === -1;
     }
@@ -178,7 +185,7 @@
             show_grid[i][j] = -1;
         }
 
-        trackgrids();
+        trackgrid();
 
         // for every bomb, update surrounding numbers
         for (var q = 0; q < bomb_num; q++) {
@@ -194,7 +201,7 @@
         }
 
         console.log("---bombs distributed---")
-        trackgrids();
+        trackgrid();
 
     }
 
@@ -328,9 +335,9 @@
         }
     }
 
+    // mark(btn: button)
+    // mark btn as flaged, change style and update bomb_left
     function mark(btn) {
-        // console.log(i, j);
-        // var button = document.getElementById(`${i},${j}`);
         console.log(btn);
         currentStatus = btn.getAttribute("data-status");
         if (currentStatus === "unrevealed") {
@@ -354,6 +361,8 @@
         }
     }
 
+    // checkWin()
+    // check if player has revealed all non-bomb cells
     function checkWin() {
         console.log(revealedCount);
         if (revealedCount === totalCells - bomb_num) {
@@ -368,11 +377,14 @@
 
 <body>
     <div id="buttonGrid">
-        row: <input type="number" id="row"><br>
-        column: <input type="number" id="col"><br>
-        bombs: <input type="number" id="bomb"><br>
-        <button onclick="if (checkValid()) {initGrid(); displayGrid()}">confirm</button>
+        <p id="instruction" style="text-align: center">
+            row: <input id="row" type="number" min="1" step="1" style="margin:5px"><br>
+            column: <input id="col" type="number" min="1" step="1" style="margin:5px"><br>
+            bombs: <input id="bomb" type="number" min="1" step="1" style="margin:5px"><br>
+            <button onclick="if (checkValid()) {initGrid(); displayGrid()}" style="margin:5px">confirm</button>
+        </p>
     </div>
+
     <div id="bombInfo" style="display:none;">
         <p>bombs left: <span id="bombCount"></span></p>
     </div>
