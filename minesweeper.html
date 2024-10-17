@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>myMinesweeper</title>
+</head>
+
+<style>
+    .showbtn {
+        background-color: rgb(235, 235, 235);
+        height: 50px;
+        width: 50px;
+        border-radius: 8px;
+        border: 0cap;
+        margin: 2px;
+        font-size: large;
+    }
+
+    .hidebtn {
+        background-color: rgb(153, 153, 153);
+        height: 50px;
+        width: 50px;
+        border-radius: 8px;
+        border: 3cap;
+        margin: 2px;
+        font-size: large;
+    }
+
+    .flagbtn {
+        background-color: rgb(153, 153, 153);
+        height: 50px;
+        width: 50px;
+        border-radius: 8px;
+        border: 3cap;
+        margin: 2px;
+        font-size: large;
+        color: brown;
+    }
+
+    .color-1 {
+        color: rgb(57, 135, 130);
+    }
+
+    .color-2 {
+        color: green;
+    }
+
+    .color-3 {
+        color: rgb(230, 163, 77);
+    }
+
+    .color-4 {
+        color: rgb(204, 51, 51);
+    }
+
+    .color-5 {
+        color: rgb(219, 93, 10);
+    }
+
+    .color-6 {
+        color: rgb(96, 2, 127);
+    }
+
+    .color-7 {
+        color: rgb(0, 66, 13);
+    }
+
+    .color-8 {
+        color: rgb(100, 40, 0);
+    }
+
+    .color-flag {
+        color: rgb(255, 0, 0);
+    }
+
+    .color-bomb {
+        color: black;
+    }
+
+    #buttonGrid {
+        display: grid;
+        grid-gap: 2px;
+    }
+</style>
+
+<script>
+    // global variables
+    var row;
+    var col;
+    var bomb_num;
+    var bomb_left;
+    var totalCells;
+    var revealedCount;
+    var show_grid = [];
+
+    function checkValid() {
+        row = parseInt(document.getElementById("row").value);
+        col = parseInt(document.getElementById("col").value);
+        bomb_num = parseInt(document.getElementById("bomb").value);
+        totalCells = row * col;
+        if (row > 0 && col > 0 && bomb_num >= totalCells) {
+            alert("invalid number of bombs.");
+            return false;
+        }
+        bomb_left = bomb_num;
+        revealedCount = 0;
+        return true;
+
+    }
+    // track grids
+    function trackgrids() {
+        console.log("show grid");
+        for (var i = 0; i < row; i++) {
+            console.log(show_grid[i]);
+        }
+    }
+
+
+    // randomly select n integers in range of low to high and return array of non-repeating integers
+    function randomSelect(n, low, high) {
+        unique_numbers = new Set();
+        while (unique_numbers.size < n) {
+            randInt = Math.floor(Math.random() * high + low - 1) + low;
+            // avoid repeated integers
+            unique_numbers.add(randInt);
+        }
+        // return in array type
+        return Array.from(unique_numbers);
+    }
+
+    // return if an index is a bomb
+    function isBomb(i, j) {
+        return show_grid[i][j] === -1;
+    }
+
+    // return if an index is out of boundary
+    function outBound(i, j) {
+        return (i >= row || i < 0 || j >= col || j < 0);
+    }
+
+    // update integers in grid around index [i][j]
+    function updateSurrounding(i, j) {
+        for (var p = i - 1; p <= i + 1; p++) {
+            for (var q = j - 1; q <= j + 1; q++) {
+                if (!outBound(p, q) && !isBomb(p, q)) {
+                    show_grid[p][q] += 1;
+                }
+            }
+        }
+    }
+
+    // initialize show_grid
+    function initGrid() {
+        // initialzie show_grid
+        for (var i = 0; i < row; i++) {
+            show_grid[i] = [];
+            for (var j = 0; j < col; j++) {
+                show_grid[i][j] = 0;
+            }
+        }
+
+        // randomly select bombs' indices;
+        bombs = randomSelect(bomb_num, 1, row * col);
+        console.log(bombs);
+
+        // distribute bombs on show_grid
+        console.log("bombs locate at:")
+        for (q = 0; q < bomb_num; q++) {
+            i = Math.floor(bombs[q] / col);
+            j = bombs[q] % col;
+            if (j === 0) {
+                j = col - 1;
+                i--;
+            } else {
+                j--;
+            }
+            console.log(i, j);
+            show_grid[i][j] = -1;
+        }
+
+        trackgrids();
+
+        // for every bomb, update surrounding numbers
+        for (var q = 0; q < bomb_num; q++) {
+            i = Math.floor(bombs[q] / col);
+            j = bombs[q] % col;
+            if (j === 0) {
+                j = col - 1;
+                i--;
+            } else {
+                j--;
+            }
+            updateSurrounding(i, j); // update numbers
+        }
+
+        console.log("---bombs distributed---")
+        trackgrids();
+
+    }
+
+    // display grid in form of button on the page
+    function displayGrid() {
+        // obtain button container
+        var buttonGrid = document.getElementById("buttonGrid");
+
+        // empty the container
+        buttonGrid.innerHTML = "";
+
+        // set size of the grid
+        buttonGrid.style.gridTemplateRows = `repeat(${row}, 50px)`;
+        buttonGrid.style.gridTemplateColumns = `repeat(${col}, 50px)`;
+
+        // recursively create buttons
+        for (var i = 0; i < row; i++) {
+            for (var j = 0; j < col; j++) {
+                // create button element
+                var btn = document.createElement("button");
+                btn.className = "hidebtn";
+                btn.id = `${i},${j}`;
+                btn.setAttribute("data-status", "unrevealed");
+                btn.setAttribute("onclick", `reveal(${i}, ${j})`);
+                btn.addEventListener("contextmenu", function (event) {
+                    event.preventDefault();
+                    mark(event.target);
+                });
+                // add btn to grid
+                buttonGrid.appendChild(btn);
+            }
+        }
+        document.getElementById("bombInfo").style.display = "block";
+        document.getElementById("bombCount").innerHTML = bomb_left;
+
+    }
+
+    // reveal number or bomb under clicked button with id id(int)
+    function reveal(i, j) {
+        var button = document.getElementById(`${i},${j}`);
+        console.log(button);
+        currentStatus = button.getAttribute("data-status");
+        console.log(currentStatus);
+        if (currentStatus === "unrevealed") {
+            button.classList.remove('hidebtn');
+            button.classList.add('showbtn');
+            if (button.classList.contains('showbtn')) {
+                console.log("style change success"); console.log(button)
+            };
+
+            button.setAttribute("data-status", "revealed");
+            var reveal_value = show_grid[i][j];
+            console.log("cliked button: " + i + j + " value: " + reveal_value);
+            if (reveal_value === 0) { // if no bomb around, reveal surrounding cells
+                button.innerHTML = " ";
+                revealedCount++;
+                revealSurround(i, j);
+            } else if (reveal_value === -1) { // if clicked bomb, game over.
+                button.innerHTML = "*";
+                button.classList.add("color-bomb");
+                alert("Game Over");
+                location.reload();
+                return;
+            } else { // if there is bombs around, show the number.
+                button.innerHTML = reveal_value;
+                revealedCount++;
+                if (reveal_value === 1) {
+                    button.classList.add("color-1");
+                } else if (reveal_value === 2) {
+                    button.classList.add("color-2");
+                } else if (reveal_value === 3) {
+                    button.classList.add("color-3");
+                } else if (reveal_value === 4) {
+                    button.classList.add("color-4");
+                } else if (reveal_value === 5) {
+                    button.classList.add("color-5");
+                } else if (reveal_value === 6) {
+                    button.classList.add("color-6");
+                } else if (reveal_value === 7) {
+                    button.classList.add("color-7");
+                } else {
+                    button.classList.add("color-8");
+                }
+            };
+            checkWin();
+            console.log("--->" + button);
+        } else if (currentStatus === "revealed") {
+            if (show_grid[i][j] != 0) {
+                var flag_num = 0;
+                for (var p = i - 1; p < i + 2; p++) {
+                    for (var q = j - 1; q < j + 2; q++) {
+                        if (!outBound(p, q)) {
+                            var surroundBtn = document.getElementById(`${p},${q}`);
+                            var surroundStatus = surroundBtn.getAttribute("data-status");
+                            console.log(surroundBtn, surroundStatus);
+                            if (surroundStatus === "flaged") {
+                                flag_num++;
+                            }
+                        }
+                    }
+                }
+                console.log("flag_num: " + flag_num);
+                if (flag_num === show_grid[i][j]) {
+                    revealSurround(i, j);
+                }
+            }
+
+        } else {
+            return;
+        }
+
+    }
+
+    // reveal cells around [i][j]
+    function revealSurround(i, j) {
+        for (var p = i - 1; p < i + 2; p++) {
+            for (var q = j - 1; q < j + 2; q++) {
+                console.log("-----------");
+                console.log("i: " + i + " j: " + j);
+                console.log("p: " + p + " q: " + q);
+                console.log("out boundary: " + outBound(p, q));
+                if (!outBound(p, q) && !(p === i && q === j)) {
+                    var neighborButton = document.getElementById(`${p},${q}`);
+
+                    // Only reveal if the cell is unrevealed
+                    if (neighborButton && neighborButton.getAttribute("data-status") === "unrevealed") {
+                        reveal(p, q);
+                    }
+                }
+            }
+        }
+    }
+
+    function mark(btn) {
+        // console.log(i, j);
+        // var button = document.getElementById(`${i},${j}`);
+        console.log(btn);
+        currentStatus = btn.getAttribute("data-status");
+        if (currentStatus === "unrevealed") {
+            if (bomb_left === 0) {
+                alert("You are out of flag!");
+            } else {
+                btn.setAttribute("data-status", "flaged");
+                btn.classList.remove("hidebtn");
+                btn.classList.add("flagbtn");
+                btn.innerHTML = "F";
+                bomb_left--;
+                document.getElementById("bombCount").innerHTML = bomb_left;
+            }
+        } else if (currentStatus === "flaged") {
+            btn.setAttribute("data-status", "unrevealed");
+            btn.classList.remove("flagbtn");
+            btn.classList.add("hidebtn");
+            btn.innerHTML = "";
+            bomb_left++;
+            document.getElementById("bombCount").innerHTML = bomb_left;
+        }
+    }
+
+    function checkWin() {
+        console.log(revealedCount);
+        if (revealedCount === totalCells - bomb_num) {
+            alert("You Win!");
+            location.reload();
+        }
+        return;
+    }
+
+</script>
+
+
+<body>
+    <div id="buttonGrid">
+        row: <input type="number" id="row"><br>
+        column: <input type="number" id="col"><br>
+        bombs: <input type="number" id="bomb"><br>
+        <button onclick="if (checkValid()) {initGrid(); displayGrid()}">confirm</button>
+    </div>
+    <div id="bombInfo" style="display:none;">
+        <p>bombs left: <span id="bombCount"></span></p>
+    </div>
+
+
+
+</body>
+
+</html>
