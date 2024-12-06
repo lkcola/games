@@ -411,7 +411,8 @@
     function checkWin() {
       console.log(revealedCount);
       if (revealedCount === totalCells - bomb_num) {
-        alert("You Win!");
+        revealAll();
+        setTimeout('alert("You Win!")', 0);
         location.reload();
       }
       return;
